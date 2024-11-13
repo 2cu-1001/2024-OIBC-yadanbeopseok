@@ -12,7 +12,7 @@ from pytorch_forecasting.metrics import MultiLoss, QuantileLoss
 from lightning.pytorch import Trainer
 
 class Climate2Generation:
-    def _init_(self):
+    def __init__(self):
         self.climate_df_list = []
         self.climate_df_list.append(pd.read_csv("./Data/Processed/Bonggae-dong_real.csv"))
         # self.climate_df_list.append(pd.read_csv("./Data/Processed/Cheju-do_real.csv"))
@@ -42,15 +42,15 @@ class Climate2Generation:
     
     
     def make_dataframe(self):
-        self.data = data = pd.merge_asof(self.climate_df.sort_values("ts"),
+        self.data = pd.merge_asof(self.climate_df.sort_values("ts"),
                      self.generation_df.sort_values("ts"),
                      on="ts",
                      direction="nearest") 
         
-        self.data["hour"] = pd.to_datetime(self.climate_df["ts"], format="%Y%m%d%H%M").dt.hour
-        self.data["day"] = pd.to_datetime(self.climate_df["ts"], format="%Y%m%d%H%M").dt.day
-        self.data["month"] = pd.to_datetime(self.climate_df["ts"], format="%Y%m%d%H%M").dt.month
-        self.data["weekday"] = pd.to_datetime(self.climate_df["ts"], format="%Y%m%d%H%M").dt.weekday
+        self.data["hour"] = pd.to_datetime(self.data["ts"], format="%Y%m%d%H%M").dt.hour
+        self.data["day"] = pd.to_datetime(self.data["ts"], format="%Y%m%d%H%M").dt.day
+        self.data["month"] = pd.to_datetime(self.data["ts"], format="%Y%m%d%H%M").dt.month
+        self.data["weekday"] = pd.to_datetime(self.data["ts"], format="%Y%m%d%H%M").dt.weekday
 
         self.data[["solar", "wind", "renewable"]] = self.data[["solar", "wind", "renewable"]].astype("Float32")
         self.data[["temp","real_feel_temp","real_feel_temp_shade","rel_hum","dew_point","wind_dir","wind_spd",
@@ -72,6 +72,7 @@ class Climate2Generation:
     
     
     def make_dataloader(self):
+        self.train = self.data
         self.ts_len = len(self.train["ts"].values)
         self.train["ts"] = [i for i in range(self.ts_len)]    
         
@@ -112,7 +113,7 @@ class Climate2Generation:
         torch.save(self.model.state_dict(), "c2g.pth")
     
 
-    def predition(self, prediction_dataloader):
+    def prediction(self, prediction_dataloader):
         self.predictions = self.model.predict(self.prediction_dataloader, return_index=True, return_decoder_lengths=True)
         self.print(self.predictions)
         
@@ -129,7 +130,7 @@ class Generation2Prrice:
         self.price_df = pd.read_csv("./Data/Processed/real_price.csv")
         self.price_df = self.price_df[["ts", "real_confirmed_price"]]
         self.price_df.sort_values("ts")
-        self.price_df = self.price_df[(self.rice_df["ts"] <= self.generation_ed) & 
+        self.price_df = self.price_df[(self.price_df["ts"] <= self.generation_ed) & 
                                       (self.price_df["ts"] >= self.generation_st)]
         
         self.max_encoder_length = 12  
@@ -137,8 +138,8 @@ class Generation2Prrice:
         self.max_epoch = 10
         
     
-    def make_datafram(self):
-        self.data = data = pd.merge_asof(self.generation_df.sort_values("ts"),
+    def make_dataframe(self):
+        self.data = pd.merge_asof(self.generation_df.sort_values("ts"),
                      self.price_df.sort_values("ts"),
                      on="ts",
                      direction="nearest") 
@@ -158,7 +159,8 @@ class Generation2Prrice:
         self.data["gruop"] = 0
         
     
-    def make_loader(self):
+    def make_dataloader(self):
+        self.train = self.data
         self.ts_len = len(self.train["ts"].values)
         self.train["ts"] = [i for i in range(self.ts_len)]
         
@@ -197,7 +199,7 @@ class Generation2Prrice:
         torch.save(self.model.state_dict(), "g2p.pth")
 
     
-    def predition(self, prediction_dataloader):
+    def prediction(self, prediction_dataloader):
         self.predictions = self.model.predict(self.prediction_dataloader, return_index=True, return_decoder_lengths=True)
         self.print(self.predictions)
         
