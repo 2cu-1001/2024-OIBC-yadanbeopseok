@@ -24,8 +24,8 @@ class OurTrainer:
         
     
     def predict_c2g(self, prediction_dataloader):
-        return self.c2g.predictions(prediction_dataloader)
+        return self.c2g.prediction(prediction_dataloader)
     
     
     def predict_g2p(self, prediction_dataloader):
-        return self.g2p.predictions(prediction_dataloader)
+        return self.g2p.prediction(prediction_dataloader)
